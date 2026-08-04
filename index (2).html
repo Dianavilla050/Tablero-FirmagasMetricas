@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tablero de Control · Diana</title>
+<style>
+:root {
+  --rosa: #E8197A;
+  --rosa-light: #F7B8D8;
+  --rosa-dark: #B5105C;
+  --rosa-bg: #FDF0F6;
+  --gris: #3D3D3D;
+  --gris-mid: #6B6B6B;
+  --gris-light: #F2F2F2;
+  --gris-border: #E0E0E0;
+  --white: #FFFFFF;
+  --text: #2A2A2A;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F4F4F4; color: var(--text); min-height: 100vh; }
+.app { max-width: 980px; margin: 0 auto; padding: 0 0 3rem; }
+
+/* ── Header corporativo ── */
+.corp-header { background: var(--gris); padding: 0; display: flex; align-items: stretch; }
+.corp-logo-band { background: var(--white); display: flex; align-items: center; justify-content: center; padding: 14px 24px; }
+.corp-logo-band img { height: 52px; display: block; }
+.corp-title-band { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 14px 24px; border-left: 3px solid var(--rosa); }
+.corp-title { font-size: 17px; font-weight: 700; color: var(--white); letter-spacing: 0.04em; text-transform: uppercase; line-height: 1.2; }
+.corp-subtitle { font-size: 11px; color: var(--rosa-light); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 3px; }
+.corp-week-band { display: flex; align-items: center; padding: 0 20px; }
+.week-input { font-size: 12px; padding: 6px 14px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; color: var(--white); width: 170px; text-align: center; font-family: inherit; }
+.week-input::placeholder { color: rgba(255,255,255,0.5); }
+
+/* ── Tabs ── */
+.tabs-wrap { background: var(--white); border-bottom: 2px solid var(--gris-border); padding: 0 1.5rem; }
+.tabs { display: flex; gap: 0; overflow-x: auto; }
+.tab-btn { padding: 13px 16px; font-size: 12px; font-weight: 600; border: none; background: transparent; cursor: pointer; color: var(--gris-mid); display: flex; align-items: center; gap: 6px; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all 0.15s; white-space: nowrap; font-family: inherit; letter-spacing: 0.02em; }
+.tab-btn.active { color: var(--rosa); border-bottom-color: var(--rosa); }
+.tab-btn:hover:not(.active) { color: var(--gris); background: var(--rosa-bg); }
+.panel { display: none; }
+.panel.active { display: block; }
+.panel-inner { padding: 1.5rem; }
+
+/* ── Typography ── */
+.section-title { font-size: 10px; font-weight: 700; color: var(--gris-mid); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.section-title::before { content: ''; display: inline-block; width: 3px; height: 12px; background: var(--rosa); border-radius: 2px; }
+.section-note { font-weight: 400; font-size: 10px; color: #bbb; text-transform: none; letter-spacing: 0; }
+.divider { border: none; border-top: 1px solid var(--gris-border); margin: 1.25rem 0; }
+
+/* ── Métricas ── */
+.metrics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; margin-bottom: 0.75rem; }
+.metric-card { background: var(--white); border: 1px solid var(--gris-border); border-radius: 10px; padding: 14px; position: relative; border-top: 3px solid var(--rosa); }
+.metric-card:hover .metric-edit-btn, .metric-card:hover .metric-del-btn { opacity: 1; }
+.metric-edit-btn { position: absolute; top: 8px; right: 8px; background: none; border: none; cursor: pointer; font-size: 13px; color: #ccc; padding: 2px 4px; border-radius: 5px; opacity: 0; transition: opacity 0.15s; }
+.metric-edit-btn:hover { color: var(--gris); background: var(--gris-light); }
+.metric-del-btn { position: absolute; top: 8px; right: 30px; background: none; border: none; cursor: pointer; font-size: 13px; color: #ccc; padding: 2px 4px; border-radius: 5px; opacity: 0; transition: opacity 0.15s; }
+.metric-del-btn:hover { color: var(--rosa-dark); background: var(--rosa-bg); }
+.metric-label-disp { font-size: 11px; color: var(--gris-mid); margin-bottom: 6px; padding-right: 48px; font-weight: 600; letter-spacing: 0.03em; }
+.metric-val-row { display: flex; align-items: baseline; gap: 4px; }
+.metric-val-input { font-size: 22px; font-weight: 700; color: var(--gris); background: transparent; border: none; border-bottom: 2px solid var(--gris-border); width: 90px; outline: none; font-family: inherit; }
+.metric-val-input:focus { border-bottom-color: var(--rosa); }
+.metric-unit-disp { font-size: 12px; color: var(--gris-mid); }
+.metric-prev-row { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.metric-prev-input { font-size: 11px; background: transparent; border: none; border-bottom: 1px dashed var(--gris-border); width: 65px; outline: none; color: #aaa; font-family: inherit; }
+.metric-prev-input::placeholder { color: #ccc; }
+.delta-badge { font-size: 10px; padding: 2px 6px; border-radius: 100px; font-weight: 700; }
+.delta-good { background: #eaf3de; color: #3b6d11; }
+.delta-bad  { background: #fcebeb; color: #a32d2d; }
+
+/* Metric edit form */
+.metric-card.editing { border-top-color: var(--gris); background: var(--gris-light); }
+.metric-edit-form { display: flex; flex-direction: column; gap: 8px; }
+.edit-field-label { font-size: 10px; color: var(--gris-mid); margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+.edit-text-input { font-size: 13px; padding: 6px 9px; border: 1px solid var(--gris-border); border-radius: 7px; background: var(--white); font-family: inherit; width: 100%; outline: none; }
+.edit-text-input:focus { border-color: var(--rosa); }
+.edit-toggle { display: flex; gap: 5px; }
+.toggle-btn { flex: 1; font-size: 11px; padding: 5px 8px; border: 1px solid var(--gris-border); border-radius: 7px; cursor: pointer; background: var(--white); color: var(--gris-mid); font-family: inherit; text-align: center; }
+.toggle-btn.sel { background: var(--rosa); color: var(--white); border-color: var(--rosa); }
+.edit-actions { display: flex; gap: 6px; margin-top: 2px; }
+.btn-save { flex: 1; font-size: 12px; padding: 7px; background: var(--gris); color: var(--white); border: none; border-radius: 7px; cursor: pointer; font-family: inherit; }
+.btn-save:hover { background: var(--rosa); }
+.btn-cancel { font-size: 12px; padding: 7px 12px; background: var(--gris-light); color: var(--gris-mid); border: none; border-radius: 7px; cursor: pointer; font-family: inherit; }
+
+/* Add metric */
+.add-metric-btn { display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 8px 14px; background: var(--white); border: 1px dashed var(--rosa-light); border-radius: 9px; cursor: pointer; color: var(--rosa); width: 100%; justify-content: center; margin-bottom: 1.5rem; transition: all 0.15s; font-weight: 600; }
+.add-metric-btn:hover { background: var(--rosa-bg); border-color: var(--rosa); }
+.add-metric-form { background: var(--white); border: 1px solid var(--rosa); border-radius: 10px; padding: 16px; margin-bottom: 1.5rem; }
+.add-metric-form h4 { font-size: 12px; font-weight: 700; margin-bottom: 12px; color: var(--gris); }
+.form-grid { display: grid; grid-template-columns: 1fr 80px; gap: 8px; margin-bottom: 8px; }
+.form-label { font-size: 10px; color: var(--gris-mid); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+.form-input { font-size: 13px; padding: 7px 10px; border: 1px solid var(--gris-border); border-radius: 7px; background: var(--white); font-family: inherit; width: 100%; outline: none; }
+.form-input:focus { border-color: var(--rosa); }
+.direction-row { margin-bottom: 10px; }
+.direction-btns { display: flex; gap: 6px; }
+.dir-btn { flex: 1; font-size: 12px; padding: 7px; border: 1px solid var(--gris-border); border-radius: 7px; cursor: pointer; background: var(--white); color: var(--gris-mid); font-family: inherit; }
+.dir-btn.sel { background: var(--rosa); color: var(--white); border-color: var(--rosa); }
+.form-actions { display: flex; gap: 7px; }
+.btn-primary { flex: 1; font-size: 13px; padding: 8px; background: var(--gris); color: var(--white); border: none; border-radius: 7px; cursor: pointer; font-family: inherit; }
+.btn-primary:hover { background: var(--rosa); }
+.btn-secondary { font-size: 13px; padding: 8px 14px; background: var(--gris-light); color: var(--gris-mid); border: none; border-radius: 7px; cursor: pointer; font-family: inherit; }
+
+/* Avances */
+.avances-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1.5rem; }
+.avance-row { background: var(--white); border: 1px solid var(--gris-border); border-left: 3px solid var(--rosa-light); border-radius: 10px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; }
+.avance-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.avance-body { flex: 1; }
+.avance-title { font-size: 13px; font-weight: 600; color: var(--gris); }
+.avance-sub { font-size: 12px; color: var(--gris-mid); margin-top: 1px; }
+.avance-arrow { font-size: 18px; }
+.empty-state { text-align: center; padding: 1.5rem; color: #ccc; font-size: 13px; background: var(--gris-light); border: 1px dashed var(--gris-border); border-radius: 10px; margin-bottom: 1.5rem; }
+
+/* Items */
+.items-list { display: flex; flex-direction: column; gap: 7px; margin-bottom: 1.25rem; }
+.item-row { background: var(--white); border: 1px solid var(--gris-border); border-radius: 10px; padding: 11px 14px; display: flex; align-items: flex-start; gap: 10px; }
+.item-row:hover { border-color: var(--rosa-light); }
+.item-body { flex: 1; min-width: 0; }
+.item-title { font-size: 13px; font-weight: 600; color: var(--gris); }
+.item-desc { font-size: 12px; color: var(--gris-mid); margin-top: 2px; }
+.item-meta { display: flex; gap: 6px; margin-top: 5px; }
+.badge { font-size: 11px; padding: 2px 9px; border-radius: 100px; font-weight: 600; }
+.badge-amarillo { background: #FFF3E0; color: #E65100; }
+.badge-azul     { background: #E3F2FD; color: #1565C0; }
+.badge-verde    { background: #E8F5E9; color: #2E7D32; }
+.badge-rojo     { background: #FFEBEE; color: #C62828; }
+.status-sel { font-size: 12px; border: 1px solid var(--gris-border); background: var(--gris-light); color: var(--gris); border-radius: 7px; padding: 4px 8px; cursor: pointer; flex-shrink: 0; font-family: inherit; }
+.status-sel:focus { border-color: var(--rosa); outline: none; }
+.del-btn { background: none; border: none; cursor: pointer; color: #ccc; font-size: 18px; flex-shrink: 0; padding: 0 4px; line-height: 1; }
+.del-btn:hover { color: var(--rosa-dark); }
+
+/* Add form */
+.add-form { background: var(--rosa-bg); border: 1px solid var(--rosa-light); border-radius: 10px; padding: 12px; margin-bottom: 10px; }
+.add-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.add-row input, .add-row select { font-size: 12px; padding: 7px 10px; flex: 1; min-width: 120px; background: var(--white); border: 1px solid var(--gris-border); border-radius: 7px; color: var(--text); font-family: inherit; outline: none; }
+.add-row input:focus { border-color: var(--rosa); }
+.add-row button { padding: 7px 14px; font-size: 12px; background: var(--rosa); color: var(--white); border: none; border-radius: 7px; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; font-family: inherit; font-weight: 600; }
+.add-row button:hover { background: var(--rosa-dark); }
+
+/* Resumen */
+.resumen-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
+.resumen-card { background: var(--white); border: 1px solid var(--gris-border); border-radius: 12px; padding: 16px; border-top: 3px solid var(--gris-border); }
+.resumen-card.s-verde-card  { border-top-color: #4CAF50; }
+.resumen-card.s-amarillo-card { border-top-color: #FF9800; }
+.resumen-card.s-rojo-card   { border-top-color: #F44336; }
+.resumen-card-title { font-size: 12px; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 7px; color: var(--gris); letter-spacing: 0.02em; text-transform: uppercase; }
+.semaforo { display: inline-block; width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.s-verde    { background: #4CAF50; }
+.s-amarillo { background: #FF9800; }
+.s-rojo     { background: #F44336; }
+.resumen-metric { font-size: 12px; color: var(--gris-mid); padding: 3px 0; display: flex; justify-content: space-between; border-bottom: 1px solid var(--gris-light); }
+.resumen-metric:last-of-type { border-bottom: none; }
+.resumen-metric span:last-child { font-weight: 700; color: var(--gris); }
+.progress-wrap { background: var(--gris-light); border-radius: 100px; height: 5px; overflow: hidden; margin-top: 8px; }
+.progress-bar { height: 5px; border-radius: 100px; transition: width 0.3s; }
+.pct-label { font-size: 11px; color: #aaa; margin-top: 3px; text-align: right; }
+
+/* Detalle de pagos */
+.pagos-box { background: var(--white); border: 1px solid var(--gris-border); border-radius: 12px; overflow: hidden; margin-bottom: 1.5rem; }
+.pagos-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--gris-border); background: var(--gris-light); }
+.pagos-header-title { font-size: 12px; font-weight: 700; color: var(--gris); display: flex; align-items: center; gap: 7px; letter-spacing: 0.03em; }
+.pagos-total-pill { font-size: 13px; font-weight: 700; color: var(--white); background: var(--rosa); border-radius: 8px; padding: 4px 12px; letter-spacing: -0.01em; }
+.pagos-table { width: 100%; border-collapse: collapse; }
+.pagos-table th { font-size: 10px; font-weight: 700; color: var(--gris-mid); text-transform: uppercase; letter-spacing: 0.07em; padding: 8px 14px; text-align: left; border-bottom: 1px solid var(--gris-border); background: var(--gris-light); }
+.pagos-table th:last-child { text-align: right; }
+.pagos-table td { font-size: 13px; padding: 10px 14px; border-bottom: 1px solid #fafafa; vertical-align: middle; color: var(--gris); }
+.pagos-table td:last-child { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+.pagos-table tr:last-child td { border-bottom: none; }
+.pagos-table tr:hover td { background: var(--rosa-bg); }
+.pago-concepto { font-size: 13px; font-weight: 600; }
+.pago-beneficiario { font-size: 11px; color: var(--gris-mid); margin-top: 1px; }
+.pago-fecha-badge { font-size: 11px; padding: 3px 8px; background: var(--gris-light); color: var(--gris-mid); border-radius: 6px; white-space: nowrap; }
+.pago-urgente    { background: #FFEBEE; color: #C62828; }
+.pago-programado { background: #FFF3E0; color: #E65100; }
+.pago-pagado     { background: #E8F5E9; color: #2E7D32; }
+.pagos-add-row { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 14px; background: var(--rosa-bg); border-top: 1px solid var(--rosa-light); }
+.pagos-add-row input, .pagos-add-row select { font-size: 12px; padding: 7px 10px; background: var(--white); border: 1px solid var(--gris-border); border-radius: 7px; color: var(--text); font-family: inherit; outline: none; }
+.pagos-add-row input:focus, .pagos-add-row select:focus { border-color: var(--rosa); }
+.p-concepto { flex: 2; min-width: 130px; }
+.p-benef { flex: 1.5; min-width: 110px; }
+.p-monto { width: 110px; }
+.p-fecha { width: 130px; }
+.p-tipo { width: 120px; }
+.p-add-btn { padding: 7px 14px; font-size: 12px; background: var(--rosa); color: var(--white); border: none; border-radius: 7px; cursor: pointer; white-space: nowrap; font-family: inherit; font-weight: 600; }
+.p-add-btn:hover { background: var(--rosa-dark); }
+.pago-del { background: none; border: none; cursor: pointer; color: #ddd; font-size: 16px; padding: 0 4px; line-height: 1; }
+.pago-del:hover { color: var(--rosa-dark); }
+.pagos-empty { padding: 20px; text-align: center; font-size: 12px; color: #ccc; }
+.pagos-linked-note { font-size: 11px; color: var(--gris-mid); display: flex; align-items: center; gap: 5px; padding: 8px 16px; border-top: 1px solid var(--gris-border); background: #FFFDE7; }
+
+/* Saldos */
+.saldos-box { background: var(--white); border: 1px solid var(--gris-border); border-radius: 12px; overflow: hidden; margin-bottom: 1.5rem; }
+.saldos-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--gris-border); background: var(--gris-light); }
+.saldos-header-title { font-size: 12px; font-weight: 700; color: var(--gris); }
+.saldos-total-pill { font-size: 13px; font-weight: 700; color: var(--white); background: var(--rosa); border-radius: 8px; padding: 4px 12px; }
+.saldos-table { width: 100%; border-collapse: collapse; }
+.saldos-table th { font-size: 10px; font-weight: 700; color: var(--gris-mid); text-transform: uppercase; letter-spacing: 0.07em; padding: 8px 16px; text-align: left; border-bottom: 1px solid var(--gris-border); background: var(--gris-light); }
+.saldos-table th.th-right { text-align: right; padding-right: 14px; }
+.saldos-table td { border-bottom: 1px solid #fafafa; vertical-align: middle; }
+.saldos-table tr:not(.saldos-total-row):hover td { background: var(--rosa-bg); }
+.saldo-cuenta-cell { padding: 9px 16px; }
+.saldo-cuenta { display: flex; align-items: center; gap: 9px; }
+.saldo-icon { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.saldo-nombre { font-size: 13px; font-weight: 600; color: var(--gris); }
+.saldo-input-cell { padding: 6px 14px 6px 0; text-align: right; }
+.saldo-input { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; background: transparent; border: none; border-bottom: 2px solid var(--gris-border); width: 145px; outline: none; font-family: inherit; color: var(--gris); padding: 3px 4px; }
+.saldo-input:focus { border-bottom-color: var(--rosa); }
+.saldo-input::placeholder { color: #ccc; font-weight: 400; font-size: 12px; }
+.saldos-total-row td { background: var(--gris) !important; }
+.saldos-total-label { font-size: 12px; font-weight: 700; color: var(--white); padding: 11px 16px; letter-spacing: 0.04em; text-transform: uppercase; }
+.saldos-total-value { font-size: 18px; font-weight: 700; color: var(--rosa-light); font-variant-numeric: tabular-nums; padding: 11px 14px 11px 0; text-align: right; }
+.saldos-linked-note { font-size: 11px; color: var(--gris-mid); display: flex; align-items: center; gap: 5px; padding: 8px 16px; border-top: 1px solid var(--gris-border); background: #FFFDE7; }
+
+/* Reportes */
+.reportes-box { background: var(--white); border: 1px solid var(--gris-border); border-radius: 12px; overflow: hidden; margin-bottom: 1.5rem; }
+.reportes-toolbar { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: var(--gris-light); border-bottom: 1px solid var(--gris-border); flex-wrap: wrap; }
+.reportes-toolbar-title { font-size: 12px; font-weight: 700; color: var(--gris); flex: 1; letter-spacing: 0.03em; }
+.upload-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 7px 14px; background: var(--rosa); color: var(--white); border: none; border-radius: 7px; cursor: pointer; font-family: inherit; white-space: nowrap; font-weight: 600; }
+.upload-btn:hover { background: var(--rosa-dark); }
+.reportes-tabs { display: flex; gap: 1px; border-bottom: 1px solid var(--gris-border); overflow-x: auto; min-height: 38px; background: var(--gris-light); }
+.reporte-tab { display: flex; align-items: center; gap: 7px; padding: 8px 14px; font-size: 12px; font-weight: 600; color: var(--gris-mid); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; background: transparent; border-top: none; border-left: none; border-right: none; font-family: inherit; transition: all 0.12s; flex-shrink: 0; }
+.reporte-tab:hover { color: var(--gris); background: var(--rosa-bg); }
+.reporte-tab.active { color: var(--rosa); border-bottom-color: var(--rosa); background: var(--white); }
+.reporte-tab-icon { font-size: 14px; }
+.reporte-tab-close { font-size: 15px; color: #bbb; margin-left: 4px; line-height: 1; padding: 0 2px; background: none; border: none; cursor: pointer; font-family: inherit; border-radius: 3px; }
+.reporte-tab-close:hover { color: var(--rosa-dark); background: var(--rosa-bg); }
+.reportes-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem 2rem; color: #ccc; gap: 10px; }
+.reportes-empty-icon { font-size: 36px; }
+.reportes-empty-text { font-size: 13px; text-align: center; line-height: 1.5; }
+.reportes-viewer { min-height: 420px; }
+.viewer-frame { width: 100%; height: 580px; border: none; display: block; }
+.viewer-img { max-width: 100%; max-height: 580px; display: block; margin: 0 auto; padding: 12px; }
+.viewer-excel { padding: 16px; }
+.excel-table-wrap { overflow-x: auto; }
+.excel-table { border-collapse: collapse; font-size: 12px; min-width: 100%; }
+.excel-table th { background: var(--gris); color: var(--white); font-weight: 700; padding: 6px 10px; border: 1px solid var(--gris-mid); text-align: left; white-space: nowrap; }
+.excel-table td { padding: 5px 10px; border: 1px solid var(--gris-border); color: var(--gris); white-space: nowrap; }
+.excel-table tr:nth-child(even) td { background: var(--rosa-bg); }
+.excel-sheet-tabs { display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; }
+.excel-sheet-btn { font-size: 11px; padding: 4px 10px; border: 1px solid var(--gris-border); border-radius: 6px; background: var(--white); cursor: pointer; font-family: inherit; color: var(--gris-mid); }
+.excel-sheet-btn.active { background: var(--rosa); color: var(--white); border-color: var(--rosa); }
+.viewer-unsupported { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem; color: #aaa; gap: 8px; font-size: 13px; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+<div class="app">
+  <div class="corp-header">
+    <div class="corp-logo-band">
+      <img src="data:image/png;base64,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" alt="Firma Gas">
+    </div>
+    <div class="corp-title-band">
+      <div class="corp-title">Tablero de Control G. Administrativa</div>
+      <div class="corp-subtitle">El gas responsable</div>
+    </div>
+    <div class="corp-week-band" style="flex-direction:column;gap:8px;padding:12px 20px;">
+      <input type="text" class="week-input" id="week-label" value="Semana 24 · 2026">
+      <div style="display:flex;gap:6px;">
+        <button onclick="guardarSesion()" style="flex:1;font-size:11px;padding:5px 10px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:6px;color:#fff;cursor:pointer;font-family:inherit;font-weight:600;white-space:nowrap;" title="Guardar todos los datos en un archivo JSON">💾 Guardar</button>
+        <label style="flex:1;font-size:11px;padding:5px 10px;background:rgba(232,25,122,0.7);border:1px solid rgba(255,255,255,0.3);border-radius:6px;color:#fff;cursor:pointer;font-family:inherit;font-weight:600;text-align:center;white-space:nowrap;" title="Cargar datos de una sesión anterior">📂 Cargar<input type="file" id="load-input" accept=".json" style="display:none" onchange="cargarSesion(event)"></label>
+      </div>
+    </div>
+  </div>
+
+  <div class="gh-bar">
+    <span class="gh-bar-label">Historial semanal:</span>
+    <select class="gh-semana-sel" id="gh-semana-sel"><option value="">— Selecciona una semana —</option></select>
+    <button class="gh-load-btn" onclick="cargarSemanaGitHub()">Cargar semana</button>
+    <span class="gh-status" id="gh-status">Conectado: Dianavilla050/Tablero-FirmagasMetricas</span>
+  </div>
+  <div class="tabs-wrap">
+  <div class="tabs">
+    <button class="tab-btn" onclick="showTab('buzon',this)">Buzon Director</button>
+    <button class="tab-btn active" onclick="showTab('resumen',this)">⊞ Resumen</button>
+    <button class="tab-btn" onclick="showTab('contabilidad',this)">∑ Contabilidad</button>
+    <button class="tab-btn" onclick="showTab('facturacion',this)">◫ Facturación</button>
+    <button class="tab-btn" onclick="showTab('tesoreria',this)">⬡ Tesorería / Finanzas</button>
+    <button class="tab-btn" onclick="showTab('gerencia',this)">◈ Gerencia</button>
+    <button class="tab-btn" onclick="showTab('rrhh',this)">❖ Rec. Humanos</button>
+    <button class="tab-btn" onclick="showTab('cxc',this)">⬦ Cuentas x Cobrar</button>
+    <button class="tab-btn" onclick="showTab('compras',this)">◉ Compras</button>
+  </div>
+  </div>
+
+  <div id="panel-buzon" class="panel"></div>
+  <div id="panel-resumen" class="panel active"></div>
+  <div id="panel-contabilidad" class="panel"></div>
+  <div id="panel-facturacion" class="panel"></div>
+  <div id="panel-tesoreria" class="panel"></div>
+  <div id="panel-gerencia" class="panel"></div>
+  <div id="panel-rrhh" class="panel"></div>
+  <div id="panel-cxc" class="panel"></div>
+  <div id="panel-compras" class="panel"></div>
+</div>
+
+<script>
+const AREAS = {
+  contabilidad: {
+    label: 'Contabilidad',
+    metrics: [
+      { label: 'Registros capturados en tiempo y forma',  unit: '%',    val: '', prev: '', upIsGood: true },
+      { label: 'Conciliaciones bancarias correctas',      unit: '%',    val: '', prev: '', upIsGood: true },
+      { label: 'Cumplimiento obligaciones fiscales',      unit: '%',    val: '', prev: '', upIsGood: true },
+      { label: 'Exactitud estados financieros',           unit: '%',    val: '', prev: '', upIsGood: true },
+      { label: 'Reportes entregados a G. Administrativa', unit: 'rep.', val: '', prev: '', upIsGood: true },
+      { label: 'Disponibilidad info. para auditoría',     unit: '%',    val: '', prev: '', upIsGood: true },
+    ],
+    pendientes: [], compromisos: []
+  },
+  facturacion: {
+    label: 'Facturación',
+    metrics: [
+      { label: 'Facturas emitidas en tiempo y forma', unit: '%',    val: '', prev: '', upIsGood: true },
+      { label: 'Exactitud facturación–cobros',        unit: '%',    val: '', prev: '', upIsGood: true },
+      { label: 'Incidencias fiscales corregidas',     unit: '%',    val: '', prev: '', upIsGood: true },
+      { label: 'Reportes entregados en tiempo',       unit: '%',    val: '', prev: '', upIsGood: true },
+    ],
+    pendientes: [], compromisos: []
+  },
+  tesoreria: {
+    label: 'Tesorería / Finanzas',
+    metrics: [
+      { label: 'Saldo disponible',                          unit: '$',    val: '', prev: '', upIsGood: true  },
+      { label: 'Pagos urgentes',                            unit: '$',    val: '', prev: '', upIsGood: false },
+      { label: 'Diferencias turno',                         unit: '$',    val: '', prev: '', upIsGood: false },
+      { label: 'Conciliaciones diarias correctas',          unit: '%',    val: '', prev: '', upIsGood: true  },
+      { label: 'Reportes de tesorería en tiempo',           unit: '%',    val: '', prev: '', upIsGood: true  },
+      { label: 'Archivo y soporte documental',              unit: '%',    val: '', prev: '', upIsGood: true  },
+      { label: 'Cumplimiento entrega y prog. de gastos',    unit: '%',    val: '', prev: '', upIsGood: true  },
+      { label: 'Incidencias financieras detectadas y corregidas', unit: '%', val: '', prev: '', upIsGood: true },
+    ],
+    pendientes: [], compromisos: []
+  },
+  gerencia: {
+    label: 'Gerencia',
+    metrics: [
+      { label: 'Promedio general de áreas',        unit: '%', val: '', prev: '', upIsGood: true,  autoCalc: true  },
+      { label: 'Áreas en meta (≥ 90%)',            unit: '',  val: '', prev: '', upIsGood: true,  autoCalc: true  },
+      { label: 'Áreas en riesgo (< 70%)',          unit: '',  val: '', prev: '', upIsGood: false, autoCalc: true  },
+      { label: 'Compromisos cumplidos esta semana', unit: '%', val: '', prev: '', upIsGood: true  },
+      { label: 'Temas escalados a Dirección',      unit: '',  val: '', prev: '', upIsGood: false },
+    ],
+    pendientes: [], compromisos: []
+  },
+  rrhh: {
+    label: 'Recursos Humanos',
+    metrics: [
+      { label: 'Expedientes de trabajadores completos',          unit: '%',    val: '', prev: '', upIsGood: true },
+      { label: 'Reportes de incidencias de personal para nómina',unit: 'rep.', val: '', prev: '', upIsGood: true },
+      { label: 'Soporte documental auditorías laborales',        unit: '%',    val: '', prev: '', upIsGood: true },
+      { label: 'Cálculo y pago oportuno nómina y prestaciones',  unit: '%',    val: '', prev: '', upIsGood: true },
+      { label: 'Cumplimiento y capacitación',                    unit: '%',    val: '', prev: '', upIsGood: true },
+      { label: 'Evaluación de desempeño',                        unit: '%',    val: '', prev: '', upIsGood: true },
+    ],
+    pendientes: [], compromisos: []
+  },
+  cxc: {
+    label: 'Cuentas por Cobrar',
+    metrics: [
+      { label: 'Actualización reporte cobranza y cartera vencida', unit: '%',    val: '', prev: '', upIsGood: true  },
+      { label: 'Recuperación de cartera vencida',                  unit: '%',    val: '', prev: '', upIsGood: true  },
+      { label: 'Índice de morosidad',                              unit: '%',    val: '', prev: '', upIsGood: false },
+      { label: 'Promesas de pago cumplidas',                       unit: '%',    val: '', prev: '', upIsGood: true  },
+    ],
+    pendientes: [], compromisos: []
+  },
+  compras: {
+    label: 'Compras',
+    metrics: [
+      { label: 'Compras realizadas con CFDI válido',              unit: '%', val: '', prev: '', upIsGood: true },
+      { label: 'Puntualidad entrega comprobantes a Contabilidad', unit: '%', val: '', prev: '', upIsGood: true },
+      { label: 'Cumplimiento en tiempos de entrega proveedores',  unit: '%', val: '', prev: '', upIsGood: true },
+      { label: 'Nivel de satisfacción G. Administrativa',         unit: '%', val: '', prev: '', upIsGood: true },
+    ],
+    pendientes: [], compromisos: []
+  }
+};
+
+
+// Saldos disponibles (Tesorería)
+AREAS.tesoreria.saldos = [
+  { id: 'caja_chica',   nombre: 'Caja Chica',        icon: '💵', bg: '#eaf3de', val: '' },
+  { id: 'bbva',         nombre: 'BBVA Bancomer',      icon: '🏦', bg: '#e6f1fb', val: '' },
+  { id: 'santander',    nombre: 'Santander',           icon: '🏧', bg: '#fcebeb', val: '' },
+  { id: 'transfergas',  nombre: 'Transfergas',         icon: '⛽', bg: '#faeeda', val: '' },
+  { id: 'monedas_caja', nombre: 'Monedas en Caja',    icon: '🪙', bg: '#f3e8fb', val: '' },
+  { id: 'otros',        nombre: 'Otros',               icon: '📂', bg: '#f0f0ee', val: '' },
+];
+
+// Detalle de pagos (Tesorería)
+AREAS.tesoreria.pagosDetalle = [];
+
+const PAGO_TIPOS = {
+  urgente:    { label: 'Urgente',    cls: 'pago-urgente'    },
+  programado: { label: 'Programado', cls: 'pago-programado' },
+  pagado:     { label: 'Pagado',     cls: 'pago-pagado'     },
+};
+
+const STATUS_MAP = {
+  pendiente:    { label: 'Pendiente',  cls: 'badge-amarillo' },
+  'en-proceso': { label: 'En proceso', cls: 'badge-azul'     },
+  completado:   { label: 'Completado', cls: 'badge-verde'    },
+  bloqueado:    { label: 'Bloqueado',  cls: 'badge-rojo'     },
+};
+
+// editing state per area: null | index
+const editingMetric = { contabilidad: null, facturacion: null, tesoreria: null, gerencia: null, rrhh: null, cxc: null, compras: null };
+// show add form per area
+const showingAddMetric = { contabilidad: false, facturacion: false, tesoreria: false, gerencia: false, rrhh: false, cxc: false, compras: false };
+// temp values for new metric direction toggle
+const newMetricDir = { contabilidad: false, facturacion: true, tesoreria: true, gerencia: false, rrhh: true, cxc: false, compras: true };
+
+function delta(m) {
+  const v = parseFloat(m.val), p = parseFloat(m.prev);
+  if (isNaN(v) || isNaN(p) || p === 0) return null;
+  const pct = Math.round(((v - p) / Math.abs(p)) * 100);
+  const up = v > p;
+  const good = m.upIsGood ? up : !up;
+  return { pct, up, good };
+}
+
+// ── Metric card: vista normal ──────────────────────────────────────
+function metricCardView(area, i) {
+  const m = AREAS[area].metrics[i];
+  const d = delta(m);
+  let badge = '';
+  if (d !== null) {
+    const cls = d.good ? 'delta-good' : 'delta-bad';
+    badge = `<span class="delta-badge ${cls}">${d.up ? '▲' : '▼'} ${Math.abs(d.pct)}%</span>`;
+  }
+  return `
+    <div class="metric-card" id="mc-${area}-${i}">
+      <button class="metric-del-btn" onclick="deleteMetric('${area}',${i})" title="Eliminar métrica">×</button>
+      <button class="metric-edit-btn" onclick="startEditMetric('${area}',${i})" title="Editar métrica">✎</button>
+      <div class="metric-label-disp">${m.label}</div>
+      <div class="metric-val-row">
+        <input type="text" class="metric-val-input" placeholder="—" value="${m.val}"
+          oninput="AREAS['${area}'].metrics[${i}].val=this.value;syncMetricCard('${area}',${i});renderResumen()">
+        <span class="metric-unit-disp">${m.unit}</span>
+      </div>
+      <div class="metric-prev-row">
+        <input type="text" class="metric-prev-input" placeholder="sem. ant." value="${m.prev}"
+          oninput="AREAS['${area}'].metrics[${i}].prev=this.value;syncMetricCard('${area}',${i});renderResumen()">
+        ${badge}
+      </div>
+    </div>`;
+}
+
+// ── Metric card: modo edición ──────────────────────────────────────
+function metricCardEdit(area, i) {
+  const m = AREAS[area].metrics[i];
+  const yesClass = m.upIsGood ? 'sel' : '';
+  const noClass  = !m.upIsGood ? 'sel' : '';
+  return `
+    <div class="metric-card editing" id="mc-${area}-${i}">
+      <div class="metric-edit-form">
+        <div>
+          <div class="edit-field-label">Nombre de la métrica</div>
+          <input type="text" class="edit-text-input" id="edit-label-${area}-${i}" value="${m.label}">
+        </div>
+        <div>
+          <div class="edit-field-label">Unidad</div>
+          <input type="text" class="edit-text-input" id="edit-unit-${area}-${i}" value="${m.unit}" placeholder="$, días, fac., %…" style="width:100px;">
+        </div>
+        <div>
+          <div class="edit-field-label">¿Subir es bueno?</div>
+          <div class="edit-toggle">
+            <button class="toggle-btn ${yesClass}" id="edit-up-yes-${area}-${i}"
+              onclick="setEditDir('${area}',${i},true)">↑ Sí</button>
+            <button class="toggle-btn ${noClass}" id="edit-up-no-${area}-${i}"
+              onclick="setEditDir('${area}',${i},false)">↓ No</button>
+          </div>
+        </div>
+        <div class="edit-actions">
+          <button class="btn-save" onclick="saveEditMetric('${area}',${i})">Guardar</button>
+          <button class="btn-cancel" onclick="cancelEditMetric('${area}',${i})">Cancelar</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function setEditDir(area, i, val) {
+  AREAS[area].metrics[i].upIsGood = val;
+  document.getElementById(`edit-up-yes-${area}-${i}`).className = 'toggle-btn' + (val ? ' sel' : '');
+  document.getElementById(`edit-up-no-${area}-${i}`).className  = 'toggle-btn' + (!val ? ' sel' : '');
+}
+
+function startEditMetric(area, i) {
+  editingMetric[area] = i;
+  const card = document.getElementById(`mc-${area}-${i}`);
+  card.outerHTML; // just to trigger
+  replaceMetricCard(area, i, metricCardEdit(area, i));
+}
+
+function saveEditMetric(area, i) {
+  const lbl = document.getElementById(`edit-label-${area}-${i}`).value.trim();
+  const unit = document.getElementById(`edit-unit-${area}-${i}`).value.trim();
+  if (lbl) AREAS[area].metrics[i].label = lbl;
+  AREAS[area].metrics[i].unit = unit;
+  editingMetric[area] = null;
+  replaceMetricCard(area, i, metricCardView(area, i));
+  refreshAvances(area);
+  renderResumen();
+}
+
+function cancelEditMetric(area, i) {
+  editingMetric[area] = null;
+  replaceMetricCard(area, i, metricCardView(area, i));
+}
+
+function replaceMetricCard(area, i, html) {
+  const old = document.getElementById(`mc-${area}-${i}`);
+  if (!old) return;
+  old.outerHTML = html;
+}
+
+function syncMetricCard(area, i) {
+  // Just re-render the badge without touching the inputs
+  const m = AREAS[area].metrics[i];
+  const d = delta(m);
+  let badge = '';
+  if (d !== null) {
+    const cls = d.good ? 'delta-good' : 'delta-bad';
+    badge = `<span class="delta-badge ${cls}">${d.up ? '▲' : '▼'} ${Math.abs(d.pct)}%</span>`;
+  }
+  const prevRow = document.querySelector(`#mc-${area}-${i} .metric-prev-row`);
+  if (prevRow) {
+    const existing = prevRow.querySelector('.delta-badge');
+    if (existing) existing.remove();
+    if (badge) prevRow.insertAdjacentHTML('beforeend', badge);
+  }
+  refreshAvances(area);
+  if (area !== 'gerencia') calcGerenciaMetrics();
+}
+
+function deleteMetric(area, i) {
+  if (!confirm('¿Eliminar esta métrica?')) return;
+  AREAS[area].metrics.splice(i, 1);
+  refreshMetricsSection(area);
+  refreshAvances(area);
+  renderResumen();
+}
+
+// ── Add metric form ────────────────────────────────────────────────
+function setNewDir(area, val) {
+  newMetricDir[area] = val;
+  document.getElementById(`newdir-yes-${area}`).className = 'dir-btn' + (val ? ' sel' : '');
+  document.getElementById(`newdir-no-${area}`).className  = 'dir-btn' + (!val ? ' sel' : '');
+}
+
+function addMetricForm(area) {
+  if (!showingAddMetric[area]) {
+    return `<button class="add-metric-btn" onclick="toggleAddMetricForm('${area}')">+ Agregar métrica</button>`;
+  }
+  const up = newMetricDir[area];
+  return `
+    <div class="add-metric-form">
+      <h4>Nueva métrica</h4>
+      <div class="form-grid">
+        <div>
+          <div class="form-label">Nombre</div>
+          <input type="text" class="form-input" id="new-label-${area}" placeholder="Ej. Facturas en disputa">
+        </div>
+        <div>
+          <div class="form-label">Unidad</div>
+          <input type="text" class="form-input" id="new-unit-${area}" placeholder="$, %, días…">
+        </div>
+      </div>
+      <div class="direction-row">
+        <div class="form-label">¿Subir es bueno para este indicador?</div>
+        <div class="direction-btns" style="margin-top:5px;">
+          <button class="dir-btn${up ? ' sel' : ''}" id="newdir-yes-${area}" onclick="setNewDir('${area}',true)">↑ Sí, subir es bueno</button>
+          <button class="dir-btn${!up ? ' sel' : ''}" id="newdir-no-${area}" onclick="setNewDir('${area}',false)">↓ No, subir es malo</button>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn-primary" onclick="confirmAddMetric('${area}')">Agregar métrica</button>
+        <button class="btn-secondary" onclick="toggleAddMetricForm('${area}')">Cancelar</button>
+      </div>
+    </div>`;
+}
+
+function toggleAddMetricForm(area) {
+  showingAddMetric[area] = !showingAddMetric[area];
+  refreshMetricsSection(area);
+}
+
+function confirmAddMetric(area) {
+  const lbl = document.getElementById(`new-label-${area}`).value.trim();
+  const unit = document.getElementById(`new-unit-${area}`).value.trim();
+  if (!lbl) return;
+  AREAS[area].metrics.push({ label: lbl, unit, val: '', prev: '', upIsGood: newMetricDir[area] });
+  showingAddMetric[area] = false;
+  refreshMetricsSection(area);
+  refreshAvances(area);
+  if (area !== 'gerencia') calcGerenciaMetrics();
+  renderResumen();
+}
+
+// ── Render helpers ─────────────────────────────────────────────────
+function renderMetricsGrid(area) {
+  return `<div class="metrics-grid">` +
+    AREAS[area].metrics.map((m, i) => metricCardView(area, i)).join('') +
+  `</div>`;
+}
+
+function refreshMetricsSection(area) {
+  const el = document.getElementById(`metrics-section-${area}`);
+  if (el) el.innerHTML = renderMetricsGrid(area) + addMetricForm(area);
+}
+
+function renderAvancesHTML(area) {
+  const filled = AREAS[area].metrics.filter(m => m.val !== '');
+  if (filled.length === 0) return `<div class="empty-state">📊 Registra valores en las métricas para ver avances aquí</div>`;
+  return `<div class="avances-list">` + filled.map(m => {
+    const d = delta(m);
+    let arrow = '', sub = '';
+    if (d !== null) {
+      const color = d.good ? '#639922' : '#a32d2d';
+      arrow = `<span class="avance-arrow" style="color:${color}">${d.up ? '↑' : '↓'}</span>`;
+      sub = `vs semana anterior: ${d.up ? '+' : ''}${d.pct}%`;
+    } else {
+      sub = m.prev === '' ? 'Escribe valor de semana anterior para comparar' : '';
+    }
+    const bg = m.upIsGood ? '#eaf3de' : '#e6f1fb';
+    const fg = m.upIsGood ? '#3b6d11' : '#185fa5';
+    return `
+      <div class="avance-row">
+        <div class="avance-icon" style="background:${bg};color:${fg};">${m.upIsGood ? '↗' : '◎'}</div>
+        <div class="avance-body">
+          <div class="avance-title">${m.label}</div>
+          <div class="avance-sub"><strong>${m.val}${m.unit ? ' ' + m.unit : ''}</strong>${sub ? ' · ' + sub : ''}</div>
+        </div>
+        ${arrow}
+      </div>`;
+  }).join('') + `</div>`;
+}
+
+function refreshAvances(area) {
+  const el = document.getElementById(`avances-section-${area}`);
+  if (el) el.innerHTML = renderAvancesHTML(area);
+}
+
+function renderItemsList(area, type) {
+  const items = AREAS[area][type];
+  if (items.length === 0) return `<div class="empty-state" style="padding:1rem;font-size:12px;">Sin elementos aún</div>`;
+  return `<div class="items-list">` + items.map((it, i) => {
+    const s = STATUS_MAP[it.status];
+    const extra = [it.responsable, it.fecha].filter(Boolean).join(' · ');
+    return `
+      <div class="item-row">
+        <div class="item-body">
+          <div class="item-title">${it.titulo}</div>
+          ${extra ? `<div class="item-desc">${extra}</div>` : ''}
+          <div class="item-meta"><span class="badge ${s.cls}">${s.label}</span></div>
+        </div>
+        <select class="status-sel" onchange="updateStatus('${area}','${type}',${i},this.value)">
+          ${Object.entries(STATUS_MAP).map(([k,v]) => `<option value="${k}"${it.status===k?' selected':''}>${v.label}</option>`).join('')}
+        </select>
+        <button class="del-btn" onclick="deleteItem('${area}','${type}',${i})" title="Eliminar">×</button>
+      </div>`;
+  }).join('') + `</div>`;
+}
+
+function addForm(area, type) {
+  const id = area + '-' + type;
+  const ph = type === 'pendientes' ? 'Nuevo pendiente...' : 'Nuevo compromiso...';
+  return `
+    <div class="add-form">
+      <div class="add-row">
+        <input type="text" id="${id}-tit" placeholder="${ph}">
+        <input type="text" id="${id}-resp" placeholder="Responsable">
+        ${type === 'compromisos' ? `<input type="date" id="${id}-fecha">` : ''}
+        <button onclick="addItem('${area}','${type}')">+ Agregar</button>
+      </div>
+    </div>`;
+}
+
+function addItem(area, type) {
+  const id = area + '-' + type;
+  const titEl = document.getElementById(id + '-tit');
+  const titulo = titEl.value.trim();
+  if (!titulo) return;
+  const respEl = document.getElementById(id + '-resp');
+  const fechaEl = document.getElementById(id + '-fecha');
+  AREAS[area][type].push({ titulo, responsable: respEl?.value.trim() || '', fecha: fechaEl?.value || '', status: 'pendiente' });
+  titEl.value = '';
+  if (respEl) respEl.value = '';
+  if (fechaEl) fechaEl.value = '';
+  refreshItemsList(area, type);
+  renderResumen();
+}
+
+function refreshItemsList(area, type) {
+  const el = document.getElementById(`items-${area}-${type}`);
+  if (el) el.innerHTML = renderItemsList(area, type);
+}
+
+function deleteItem(area, type, idx) {
+  AREAS[area][type].splice(idx, 1);
+  refreshItemsList(area, type);
+  renderResumen();
+}
+
+function updateStatus(area, type, idx, val) {
+  AREAS[area][type][idx].status = val;
+  refreshItemsList(area, type);
+  renderResumen();
+}
+
+// ── Registro de pagos (Tesorería) ──────────────────────────────────
+function pagosTotalActivos() {
+  return AREAS.tesoreria.pagosDetalle
+    .filter(p => p.tipo !== 'pagado')
+    .reduce((s, p) => s + (parseFloat(p.monto) || 0), 0);
+}
+
+function fmt(n) {
+  return n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function syncPagosToMetrica() {
+  const total = pagosTotalActivos();
+  const idx = AREAS.tesoreria.metrics.findIndex(m => m.label === 'Pagos urgentes');
+  if (idx >= 0) {
+    AREAS.tesoreria.metrics[idx].val = total > 0 ? fmt(total) : '';
+    // Refresh the metric card value display without losing prev
+    const inp = document.querySelector(`#mc-tesoreria-${idx} .metric-val-input`);
+    if (inp) inp.value = AREAS.tesoreria.metrics[idx].val;
+    refreshAvances('tesoreria');
+    renderResumen();
+  }
+}
+
+function renderPagosDetalle() {
+  const pagos = AREAS.tesoreria.pagosDetalle;
+  const total = pagosTotalActivos();
+  const rows = pagos.length === 0
+    ? `<tr><td colspan="5" class="pagos-empty">Agrega pagos con el formulario de abajo</td></tr>`
+    : pagos.map((p, i) => {
+        const t = PAGO_TIPOS[p.tipo];
+        const tdStyle = p.tipo === 'pagado' ? 'style="opacity:0.5;"' : '';
+        return `
+          <tr>
+            <td ${tdStyle}>
+              <div class="pago-concepto">${p.concepto}</div>
+              ${p.beneficiario ? `<div class="pago-beneficiario">${p.beneficiario}</div>` : ''}
+            </td>
+            <td ${tdStyle}><span class="pago-fecha-badge ${t.cls}">${t.label}</span></td>
+            <td ${tdStyle}>${p.fecha || '—'}</td>
+            <td ${tdStyle}>$${fmt(parseFloat(p.monto)||0)}</td>
+            <td>
+              <button class="pago-del" onclick="deletePago(${i})" title="Eliminar">×</button>
+            </td>
+          </tr>`;
+      }).join('');
+
+  const el = document.getElementById('pagos-detalle-body');
+  if (el) el.innerHTML = rows;
+
+  const totalEl = document.getElementById('pagos-total-pill');
+  if (totalEl) totalEl.textContent = '$' + fmt(total);
+}
+
+function addPago() {
+  const concepto     = document.getElementById('p-concepto').value.trim();
+  const beneficiario = document.getElementById('p-benef').value.trim();
+  const monto        = document.getElementById('p-monto').value.trim();
+  const fecha        = document.getElementById('p-fecha').value;
+  const tipo         = document.getElementById('p-tipo').value;
+  if (!concepto || !monto) return;
+  AREAS.tesoreria.pagosDetalle.push({ concepto, beneficiario, monto, fecha, tipo });
+  document.getElementById('p-concepto').value = '';
+  document.getElementById('p-benef').value    = '';
+  document.getElementById('p-monto').value    = '';
+  document.getElementById('p-fecha').value    = '';
+  document.getElementById('p-tipo').value     = 'urgente';
+  renderPagosDetalle();
+  syncPagosToMetrica();
+}
+
+function deletePago(i) {
+  AREAS.tesoreria.pagosDetalle.splice(i, 1);
+  renderPagosDetalle();
+  syncPagosToMetrica();
+}
+
+
+// ── Saldos disponibles (Tesorería) ────────────────────────────────
+function saldosTotal() {
+  return AREAS.tesoreria.saldos.reduce((s, x) => s + (parseFloat(x.val.replace(/,/g,'')) || 0), 0);
+}
+
+function syncSaldosToMetrica() {
+  const total = saldosTotal();
+  const idx = AREAS.tesoreria.metrics.findIndex(m => m.label === 'Saldo disponible');
+  if (idx >= 0) {
+    AREAS.tesoreria.metrics[idx].val = total > 0 ? fmt(total) : '';
+    const inp = document.querySelector('#mc-tesoreria-' + idx + ' .metric-val-input');
+    if (inp) inp.value = AREAS.tesoreria.metrics[idx].val;
+    const pillM = document.getElementById('saldos-total-pill');
+    if (pillM) pillM.textContent = '$' + fmt(total);
+    const valM = document.getElementById('saldos-total-value');
+    if (valM) valM.textContent = '$' + fmt(total);
+    refreshAvances('tesoreria');
+    renderResumen();
+  }
+}
+
+function updateSaldo(id, val) {
+  const s = AREAS.tesoreria.saldos.find(x => x.id === id);
+  if (s) s.val = val;
+  const total = saldosTotal();
+  const pillM = document.getElementById('saldos-total-pill');
+  if (pillM) pillM.textContent = '$' + fmt(total);
+  const valM = document.getElementById('saldos-total-value');
+  if (valM) valM.textContent = '$' + fmt(total);
+  syncSaldosToMetrica();
+}
+
+function renderSaldosBlock() {
+  const total = saldosTotal();
+  const rows = AREAS.tesoreria.saldos.map(s => `
+    <tr>
+      <td class="saldo-cuenta-cell">
+        <div class="saldo-cuenta">
+          <div class="saldo-icon" style="background:${s.bg};">${s.icon}</div>
+          <span class="saldo-nombre">${s.nombre}</span>
+        </div>
+      </td>
+      <td class="saldo-input-cell">
+        <input type="number" class="saldo-input" placeholder="0.00" value="${s.val}"
+          oninput="updateSaldo('${s.id}', this.value)"
+          min="0" step="0.01">
+      </td>
+    </tr>`).join('');
+
+  return `
+    <div class="saldos-box">
+      <div class="saldos-header">
+        <div class="saldos-header-title">🏦 Saldos iniciales del día</div>
+        <span class="saldos-total-pill" id="saldos-total-pill">$${fmt(total)}</span>
+      </div>
+      <table class="saldos-table">
+        <thead>
+          <tr>
+            <th>Cuenta / Fuente</th>
+            <th class="th-right">Saldo inicial</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+        <tfoot>
+          <tr class="saldos-total-row">
+            <td class="saldos-total-label">Total disponible</td>
+            <td class="saldos-total-value" id="saldos-total-value">$${fmt(total)}</td>
+          </tr>
+        </tfoot>
+      </table>
+      <div class="saldos-linked-note">
+        🔗 La suma se registra automáticamente en la métrica <strong style="margin:0 3px;">Saldo disponible</strong>
+      </div>
+    </div>`;
+}
+
+function renderPagosBlock() {
+  const total = pagosTotalActivos();
+  return `
+    <div class="pagos-box">
+      <div class="pagos-header">
+        <div class="pagos-header-title">
+          💳 Registro de pagos
+        </div>
+        <span class="pagos-total-pill" id="pagos-total-pill">$${fmt(total)}</span>
+      </div>
+      <table class="pagos-table">
+        <thead>
+          <tr>
+            <th>Concepto / Beneficiario</th>
+            <th>Tipo</th>
+            <th>Fecha</th>
+            <th style="text-align:right;">Monto</th>
+            <th style="width:32px;"></th>
+          </tr>
+        </thead>
+        <tbody id="pagos-detalle-body"></tbody>
+      </table>
+      <div class="pagos-add-row">
+        <input class="p-concepto" type="text" id="p-concepto" placeholder="Concepto del pago">
+        <input class="p-benef"    type="text" id="p-benef"    placeholder="Beneficiario">
+        <input class="p-monto"    type="number" id="p-monto"  placeholder="Monto $" min="0" step="0.01">
+        <input class="p-fecha"    type="date" id="p-fecha">
+        <select class="p-tipo" id="p-tipo">
+          <option value="urgente">Urgente</option>
+          <option value="programado">Programado</option>
+          <option value="pagado">Pagado</option>
+        </select>
+        <button class="p-add-btn" onclick="addPago()">+ Agregar</button>
+      </div>
+      <div class="pagos-linked-note">
+        🔗 El total de pagos urgentes y programados se suma automáticamente a la métrica <strong style="margin:0 3px;">Pagos urgentes</strong>
+      </div>
+    </div>`;
+}
+
+
+
+// ── Auto-cálculo métricas Gerencia ────────────────────────────────
+function calcGerenciaMetrics() {
+  const areas = ['contabilidad','facturacion','tesoreria','rrhh','cxc','compras'];
+  const promedios = [];
+  let enMeta = 0, enRiesgo = 0;
+
+  areas.forEach(area => {
+    const vals = AREAS[area].metrics
+      .filter(m => m.unit === '%' && m.val !== '')
+      .map(m => parseFloat(m.val));
+    if (vals.length > 0) {
+      const prom = vals.reduce((a,b) => a+b, 0) / vals.length;
+      promedios.push(prom);
+      if (prom >= 90) enMeta++;
+      if (prom < 70)  enRiesgo++;
+    }
+  });
+
+  const g = AREAS.gerencia.metrics;
+  const promGeneral = promedios.length > 0
+    ? Math.round(promedios.reduce((a,b) => a+b, 0) / promedios.length)
+    : '';
+
+  // Promedio general
+  const i0 = g.findIndex(m => m.autoCalc && m.label.includes('Promedio'));
+  if (i0 >= 0) g[i0].val = promGeneral !== '' ? String(promGeneral) : '';
+
+  // Áreas en meta
+  const i1 = g.findIndex(m => m.autoCalc && m.label.includes('meta'));
+  if (i1 >= 0) g[i1].val = promedios.length > 0 ? String(enMeta) : '';
+
+  // Áreas en riesgo
+  const i2 = g.findIndex(m => m.autoCalc && m.label.includes('riesgo'));
+  if (i2 >= 0) g[i2].val = promedios.length > 0 ? String(enRiesgo) : '';
+
+  // Refresh gerencia panel if visible
+  const panel = document.getElementById('panel-gerencia');
+  if (panel && panel.classList.contains('active')) {
+    panel.innerHTML = renderAreaPanel('gerencia');
+  }
+  renderResumen();
+}
+
+// ── Visor de reportes (Gerencia) ───────────────────────────────────
+const reportes = [];      // { name, type, dataUrl, workbook? }
+let activeReporte = null;
+
+const EXT_ICONS = {
+  pdf: '📄', png: '🖼', jpg: '🖼', jpeg: '🖼', gif: '🖼', webp: '🖼',
+  xlsx: '📊', xls: '📊', csv: '📊'
+};
+
+function extOf(name) { return name.split('.').pop().toLowerCase(); }
+function iconOf(name) { const e = extOf(name); return EXT_ICONS[e] || '📎'; }
+function isImage(name) { return ['png','jpg','jpeg','gif','webp'].includes(extOf(name)); }
+function isExcel(name) { return ['xlsx','xls','csv'].includes(extOf(name)); }
+function isPDF(name)   { return extOf(name) === 'pdf'; }
+
+function openFilePicker() {
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = '.pdf,.png,.jpg,.jpeg,.gif,.webp,.xlsx,.xls,.csv';
+  inp.multiple = true;
+  inp.onchange = e => loadFiles(Array.from(e.target.files));
+  inp.click();
+}
+
+function loadFiles(files) {
+  let pending = files.length;
+  if (!pending) return;
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const entry = { name: file.name, type: extOf(file.name), dataUrl: ev.target.result };
+      if (isExcel(file.name)) {
+        try {
+          const wb = XLSX.read(ev.target.result.split(',')[1], { type: 'base64' });
+          entry.workbook = wb;
+          entry.activeSheet = wb.SheetNames[0];
+        } catch(e) {}
+      }
+      reportes.push(entry);
+      pending--;
+      if (pending === 0) {
+        activeReporte = reportes[reportes.length - 1].name;
+        refreshReportesSection();
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function setActiveReporte(name) {
+  activeReporte = name;
+  refreshReportesSection();
+}
+
+function setActiveReporteIdx(idx) {
+  if (reportes[idx]) { activeReporte = reportes[idx].name; refreshReportesSection(); }
+}
+
+function removeReporte(name) {
+  const idx = reportes.findIndex(r => r.name === name);
+  if (idx >= 0) reportes.splice(idx, 1);
+  if (activeReporte === name) activeReporte = reportes.length ? reportes[reportes.length-1].name : null;
+  refreshReportesSection();
+}
+
+function removeReporteIdx(idx) {
+  if (!reportes[idx]) return;
+  const name = reportes[idx].name;
+  reportes.splice(idx, 1);
+  if (activeReporte === name) activeReporte = reportes.length ? reportes[reportes.length-1].name : null;
+  refreshReportesSection();
+}
+
+function setExcelSheet(reporteName, sheetName) {
+  const r = reportes.find(x => x.name === reporteName);
+  if (r) r.activeSheet = sheetName;
+  refreshViewerOnly();
+}
+
+function setExcelSheetIdx(idx, sheetName) {
+  if (reportes[idx]) { reportes[idx].activeSheet = sheetName; refreshViewerOnly(); }
+}
+
+function setExcelSheetByIndex(rIdx, sheetIdx) {
+  if (reportes[rIdx] && reportes[rIdx].workbook) {
+    reportes[rIdx].activeSheet = reportes[rIdx].workbook.SheetNames[sheetIdx];
+    refreshViewerOnly();
+  }
+}
+
+function refreshReportesSection() {
+  const el = document.getElementById('reportes-section');
+  if (el) el.innerHTML = renderReportesBlock();
+}
+
+function refreshViewerOnly() {
+  const el = document.getElementById('reportes-viewer-content');
+  if (el) el.innerHTML = renderViewer();
+}
+
+function renderReportesBlock() {
+  const tabs = reportes.length === 0 ? '' : reportes.map((r, idx) => `
+    <button class="reporte-tab${r.name === activeReporte ? ' active' : ''}" onclick="setActiveReporteIdx(${idx})">
+      <span class="reporte-tab-icon">${iconOf(r.name)}</span>
+      ${r.name.length > 22 ? r.name.substring(0,20)+'…' : r.name}
+      <button class="reporte-tab-close" onclick="event.stopPropagation();removeReporteIdx(${idx})">×</button>
+    </button>`).join('');
+
+  const viewer = reportes.length === 0
+    ? `<div class="reportes-empty">
+        <div class="reportes-empty-icon">📂</div>
+        <div class="reportes-empty-text">Carga reportes con el botón de arriba<br>PDF, Excel, CSV e imágenes</div>
+       </div>`
+    : `<div id="reportes-viewer-content">${renderViewer()}</div>`;
+
+  return `
+    <div class="reportes-box">
+      <div class="reportes-toolbar">
+        <span class="reportes-toolbar-title">📋 Reportes de Gerencia</span>
+        <button class="upload-btn" onclick="openFilePicker()">+ Cargar reporte</button>
+      </div>
+      ${reportes.length > 0 ? `<div class="reportes-tabs">${tabs}</div>` : ''}
+      <div class="reportes-viewer">${viewer}</div>
+    </div>`;
+}
+
+function renderViewer() {
+  const r = reportes.find(x => x.name === activeReporte);
+  if (!r) return '';
+
+  if (isPDF(r.name)) {
+    return `<iframe class="viewer-frame" src="${r.dataUrl}"></iframe>`;
+  }
+  if (isImage(r.name)) {
+    return `<img class="viewer-img" src="${r.dataUrl}" alt="${r.name}">`;
+  }
+  if (isExcel(r.name) && r.workbook) {
+    const wb = r.workbook;
+    const sheetName = r.activeSheet || wb.SheetNames[0];
+    const ws = wb.Sheets[sheetName];
+    const html = XLSX.utils.sheet_to_html(ws, { editable: false });
+    const ridx = reportes.indexOf(r);
+    const sheetTabs = wb.SheetNames.length > 1
+      ? `<div class="excel-sheet-tabs">${wb.SheetNames.map((s,si) =>
+          `<button class="excel-sheet-btn${s===sheetName?' active':''}" onclick="setExcelSheetByIndex(${ridx},${si})">${s}</button>`
+        ).join('')}</div>`
+      : '';
+    // Style the raw html table
+    const styledHtml = html
+      .replace('<table>', '<table class="excel-table">')
+      .replace(/<td/g, '<td')
+      .replace(/<th/g, '<th');
+    return `<div class="viewer-excel">${sheetTabs}<div class="excel-table-wrap">${styledHtml}</div></div>`;
+  }
+  return `<div class="viewer-unsupported">📎 Vista previa no disponible para este formato<br><small>${r.name}</small></div>`;
+}
+
+function renderAreaPanel(area) {
+  const saldosSection = area === 'tesoreria' ? `
+    <hr class="divider">
+    <p class="section-title">Saldos disponibles <span class="section-note">— la suma alimenta automáticamente la métrica "Saldo disponible"</span></p>
+    <div id="saldos-section">${renderSaldosBlock()}</div>
+  ` : '';
+
+  const pagosSection = area === 'tesoreria' ? `
+    <hr class="divider">
+    <p class="section-title">Detalle de pagos <span class="section-note">— la suma alimenta automáticamente la métrica "Pagos urgentes"</span></p>
+    <div id="pagos-section">${renderPagosBlock()}</div>
+  ` : '';
+
+  const reportesSection = area === 'gerencia' ? `
+    <hr class="divider">
+    <p class="section-title">Reportes <span class="section-note">— carga PDF, Excel, CSV o imágenes para visualizarlos aquí</span></p>
+    <div id="reportes-section">${renderReportesBlock()}</div>
+  ` : '';
+
+  return `
+    <div class="panel-inner">
+    <p class="section-title">Métricas clave <span class="section-note">— edita nombre/unidad con ✎, captura valor actual y semana anterior</span></p>
+    <div id="metrics-section-${area}">
+      ${renderMetricsGrid(area)}
+      ${addMetricForm(area)}
+    </div>
+    <hr class="divider">
+    <p class="section-title">Avances y resultados <span class="section-note">— generados desde métricas</span></p>
+    <div id="avances-section-${area}">${renderAvancesHTML(area)}</div>
+    ${saldosSection}
+    ${pagosSection}
+    ${reportesSection}
+    <hr class="divider">
+    <p class="section-title">Pendientes</p>
+    ${addForm(area, 'pendientes')}
+    <div id="items-${area}-pendientes">${renderItemsList(area, 'pendientes')}</div>
+    <hr class="divider">
+    <p class="section-title">Compromisos</p>
+    ${addForm(area, 'compromisos')}
+    <div id="items-${area}-compromisos">${renderItemsList(area, 'compromisos')}</div>
+    </div>
+  `;
+}
+
+// ── Resumen ────────────────────────────────────────────────────────
+function semaforo(area) {
+  const a = AREAS[area];
+  const all = [...a.pendientes, ...a.compromisos];
+  if (all.some(i => i.status === 'bloqueado')) return 's-rojo';
+  if (all.length === 0) return a.metrics.some(m => m.val !== '') ? 's-verde' : 's-amarillo';
+  const pct = all.filter(i => i.status === 'completado').length / all.length;
+  return pct >= 0.6 ? 's-verde' : pct >= 0.3 ? 's-amarillo' : 's-rojo';
+}
+
+function renderResumen() {
+  const order = ['contabilidad','facturacion','tesoreria','gerencia','rrhh','cxc','compras'];
+  const cards = order.map(area => {
+    const a = AREAS[area];
+    const s = semaforo(area);
+    const all = [...a.pendientes, ...a.compromisos];
+    const done = all.filter(i => i.status === 'completado').length;
+    const pct = all.length > 0 ? Math.round((done / all.length) * 100) : 0;
+    const barColor = s === 's-verde' ? '#639922' : s === 's-amarillo' ? '#ba7517' : '#a32d2d';
+    const metricRows = a.metrics.filter(m => m.val !== '').map(m => {
+      const d = delta(m);
+      const ds = d !== null ? ` <span style="color:${d.good?'#639922':'#a32d2d'};font-size:10px;">${d.up?'▲':'▼'}${Math.abs(d.pct)}%</span>` : '';
+      return `<div class="resumen-metric"><span>${m.label}</span><span>${m.val}${m.unit?' '+m.unit:''}${ds}</span></div>`;
+    }).join('');
+    return `
+      <div class="resumen-card ${s}-card">
+        <div class="resumen-card-title"><span class="semaforo ${s}"></span>${a.label}</div>
+        ${metricRows || '<div style="font-size:12px;color:#ccc;margin-bottom:6px;">Sin métricas registradas</div>'}
+        ${all.length > 0 ? `<div class="progress-wrap"><div class="progress-bar" style="width:${pct}%;background:${barColor};"></div></div><div class="pct-label">${done}/${all.length} completados</div>` : ''}
+      </div>`;
+  }).join('');
+
+  const allComps = [];
+  order.forEach(area => AREAS[area].compromisos.filter(c => c.status !== 'completado').forEach(c => allComps.push({ ...c, areaLabel: AREAS[area].label })));
+  const compHTML = allComps.length === 0
+    ? `<div class="empty-state">✓ Sin compromisos pendientes</div>`
+    : `<div class="items-list">` + allComps.map(c => {
+        const s = STATUS_MAP[c.status];
+        return `<div class="item-row"><div class="item-body"><div class="item-title">${c.titulo}</div><div class="item-desc">${c.areaLabel}${c.responsable?' · '+c.responsable:''}${c.fecha?' · '+c.fecha:''}</div><div class="item-meta"><span class="badge ${s.cls}">${s.label}</span></div></div></div>`;
+      }).join('') + `</div>`;
+
+  document.getElementById('panel-resumen').innerHTML = `
+    <div class="panel-inner">
+    <p class="section-title">Estado por área</p>
+    <div class="resumen-grid">${cards}</div>
+    <hr class="divider">
+    <p class="section-title">Compromisos abiertos</p>
+    ${compHTML}
+    </div>
+  `;
+}
+
+function showTab(name, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  const panel = document.getElementById('panel-' + name);
+  panel.classList.add('active');
+  btn.classList.add('active');
+  if (name === 'buzon') { renderBuzon(); return; }
+  if (name !== 'resumen' && panel.innerHTML.trim() === '') panel.innerHTML = renderAreaPanel(name);
+  if (name === 'resumen') renderResumen();
+}
+
+
+// ── Guardar / Cargar sesión ────────────────────────────────────────
+function guardarSesion() {
+  const semana = document.getElementById('week-label').value;
+  const snapshot = {
+    version: 1,
+    semana,
+    fecha: new Date().toISOString(),
+    areas: {}
+  };
+  const allAreas = ['contabilidad','facturacion','tesoreria','gerencia','rrhh','cxc','compras'];
+  allAreas.forEach(area => {
+    snapshot.areas[area] = {
+      metrics: AREAS[area].metrics.map(m => ({ label: m.label, unit: m.unit, val: m.val, prev: m.prev, upIsGood: m.upIsGood, ...(m.autoCalc ? {autoCalc: true} : {}) })),
+      pendientes: AREAS[area].pendientes,
+      compromisos: AREAS[area].compromisos,
+    };
+  });
+  snapshot.tesoreria_saldos = AREAS.tesoreria.saldos.map(s => ({ id: s.id, val: s.val }));
+  snapshot.tesoreria_pagos = AREAS.tesoreria.pagosDetalle;
+  snapshot.buzonMensajes = buzonMensajes.slice();
+
+  const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const semanaSlug = semana.replace(/[^a-zA-Z0-9]/g, '_');
+  a.href = url;
+  a.download = `tablero_${semanaSlug}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function cargarSesion(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const snap = JSON.parse(e.target.result);
+      if (!snap.areas) { alert('Archivo no válido'); return; }
+
+      // Restore semana label
+      if (snap.semana) document.getElementById('week-label').value = snap.semana;
+
+      // Restore area data
+      const allAreas = ['contabilidad','facturacion','tesoreria','gerencia','rrhh','cxc','compras'];
+      allAreas.forEach(area => {
+        if (!snap.areas[area]) return;
+        const saved = snap.areas[area];
+        // Merge metrics: keep structure, restore val/prev
+        if (saved.metrics) {
+          saved.metrics.forEach((sm, i) => {
+            if (AREAS[area].metrics[i]) {
+              AREAS[area].metrics[i].val  = sm.val  || '';
+              AREAS[area].metrics[i].prev = sm.prev || '';
+            }
+          });
+        }
+        AREAS[area].pendientes  = saved.pendientes  || [];
+        AREAS[area].compromisos = saved.compromisos || [];
+      });
+
+      // Restore saldos
+      if (snap.tesoreria_saldos) {
+        snap.tesoreria_saldos.forEach(s => {
+          const found = AREAS.tesoreria.saldos.find(x => x.id === s.id);
+          if (found) found.val = s.val || '';
+        });
+      }
+
+      // Restore pagos
+      if (snap.tesoreria_pagos) AREAS.tesoreria.pagosDetalle = snap.tesoreria_pagos;
+
+      // Re-render everything
+      allAreas.forEach(area => {
+        const panel = document.getElementById('panel-' + area);
+        if (panel) panel.innerHTML = renderAreaPanel(area);
+      });
+      renderPagosDetalle();
+      syncSaldosToMetrica();
+      syncPagosToMetrica();
+      calcGerenciaMetrics();
+      renderResumen();
+
+      // Show resumen tab
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('panel-resumen').classList.add('active');
+      document.querySelector('.tab-btn').classList.add('active');
+
+      alert('✓ Sesión cargada: ' + (snap.semana || '') + (snap.fecha ? '\nGuardada el ' + new Date(snap.fecha).toLocaleString('es-MX') : ''));
+    } catch(err) {
+      alert('Error al leer el archivo: ' + err.message);
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+
+// ── GitHub + Buzon ────────────────────────────────────────────────
+var buzonMensajes = [];
+var buzonBorradores = {};
+var buzonTabActiva = 'director';
+
+var AREAS_LABELS = {
+  contabilidad: 'Contabilidad',
+  facturacion: 'Facturacion',
+  tesoreria: 'Tesoreria / Finanzas',
+  gerencia: 'Gerencia',
+  rrhh: 'Recursos Humanos',
+  cxc: 'Cuentas por Cobrar',
+  compras: 'Compras'
+};
+
+async function cargarListaSemanas() {
+  var sel = document.getElementById('gh-semana-sel');
+  var status = document.getElementById('gh-status');
+  try {
+    var apiUrl = 'https://api.github.com/repos/Dianavilla050/Tablero-FirmagasMetricas/contents/datos';
+    var res = await fetch(apiUrl);
+    if (!res.ok) throw new Error('error');
+    var files = await res.json();
+    var jsons = Array.isArray(files) ? files.filter(function(f){ return f.name.indexOf('tablero_') === 0 && f.name.indexOf('.json') > 0; }) : [];
+    sel.innerHTML = '<option value="">— Selecciona una semana —</option>';
+    jsons.sort(function(a,b){ return b.name.localeCompare(a.name); }).forEach(function(f){
+      var label = f.name.replace('tablero_','').replace('.json','').replace(/_/g,' ');
+      var opt = document.createElement('option');
+      opt.value = f.download_url;
+      opt.textContent = label;
+      sel.appendChild(opt);
+    });
+    status.textContent = jsons.length + ' semanas en GitHub';
+  } catch(e) {
+    status.textContent = 'Modo local activo';
+  }
+}
+
+async function cargarSemanaGitHub() {
+  var sel = document.getElementById('gh-semana-sel');
+  var url = sel.value;
+  if (!url) { alert('Selecciona una semana primero'); return; }
+  document.getElementById('gh-status').textContent = 'Cargando...';
+  try {
+    var res = await fetch(url + '?t=' + Date.now());
+    var snap = await res.json();
+    aplicarSnapshot(snap);
+    document.getElementById('gh-status').textContent = 'Cargado: ' + (snap.semana || '');
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+function aplicarSnapshot(snap) {
+  if (!snap.areas) { alert('Archivo no valido'); return; }
+  if (snap.semana) document.getElementById('week-label').value = snap.semana;
+  var allAreas = ['contabilidad','facturacion','tesoreria','gerencia','rrhh','cxc','compras'];
+  allAreas.forEach(function(area) {
+    if (!snap.areas[area]) return;
+    var saved = snap.areas[area];
+    if (saved.metrics) {
+      saved.metrics.forEach(function(sm, i) {
+        if (AREAS[area] && AREAS[area].metrics[i]) {
+          AREAS[area].metrics[i].val  = sm.val  || '';
+          AREAS[area].metrics[i].prev = sm.prev || '';
+        }
+      });
+    }
+    AREAS[area].pendientes  = saved.pendientes  || [];
+    AREAS[area].compromisos = saved.compromisos || [];
+  });
+  if (snap.tesoreria_saldos) {
+    snap.tesoreria_saldos.forEach(function(s) {
+      var found = AREAS.tesoreria.saldos.find(function(x){ return x.id === s.id; });
+      if (found) found.val = s.val || '';
+    });
+  }
+  if (snap.tesoreria_pagos) AREAS.tesoreria.pagosDetalle = snap.tesoreria_pagos;
+  buzonMensajes.length = 0;
+  if (snap.buzonMensajes) snap.buzonMensajes.forEach(function(m){ buzonMensajes.push(m); });
+  allAreas.forEach(function(area) {
+    var panel = document.getElementById('panel-' + area);
+    if (panel) panel.innerHTML = renderAreaPanel(area);
+  });
+  renderPagosDetalle();
+  syncSaldosToMetrica();
+  syncPagosToMetrica();
+  renderResumen();
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('panel-resumen').classList.add('active');
+  document.querySelectorAll('.tab-btn')[1].classList.add('active');
+}
+
+function setBuzonTab(tab) {
+  buzonTabActiva = tab;
+  renderBuzon();
+}
+
+function setBuzonBorrador(area, val) {
+  buzonBorradores[area] = val;
+}
+
+function enviarComentarioDirector() {
+  var semana = document.getElementById('week-label').value;
+  var count = 0;
+  Object.keys(AREAS_LABELS).forEach(function(area) {
+    var txt = (buzonBorradores[area] || '').trim();
+    if (txt) {
+      buzonMensajes.unshift({
+        area: area,
+        areaLabel: AREAS_LABELS[area],
+        texto: txt,
+        semana: semana,
+        fecha: new Date().toISOString()
+      });
+      buzonBorradores[area] = '';
+      count++;
+    }
+  });
+  if (count === 0) { alert('Escribe al menos un comentario antes de enviar'); return; }
+  renderBuzon();
+  alert(count + ' comentario(s) enviado(s). Recuerda dar Guardar para preservarlos.');
+}
+
+function renderBuzon() {
+  var el = document.getElementById('panel-buzon');
+  if (!el) return;
+  var isDirector = buzonTabActiva === 'director';
+
+  var areaHTML = '';
+  Object.keys(AREAS_LABELS).forEach(function(area) {
+    var label = AREAS_LABELS[area];
+    var val = buzonBorradores[area] || '';
+    areaHTML += '<div class="buzon-area-section">';
+    areaHTML += '<div class="buzon-area-title">' + label + '</div>';
+    areaHTML += '<textarea class="buzon-textarea" id="bdr-' + area + '" placeholder="Observaciones y mejoras para ' + label + '..." onblur="setBuzonBorrador(\''+area+'\',this.value)">' + val + '</textarea>';
+    areaHTML += '</div>';
+  });
+
+  var msgHTML = '';
+  if (buzonMensajes.length === 0) {
+    msgHTML = '<div class="buzon-empty">Sin mensajes recibidos aun</div>';
+  } else {
+    buzonMensajes.forEach(function(m) {
+      msgHTML += '<div class="buzon-msg-item">';
+      msgHTML += '<div class="buzon-msg-area">' + m.areaLabel + '</div>';
+      msgHTML += '<div class="buzon-msg-text">' + m.texto + '</div>';
+      msgHTML += '<div class="buzon-msg-meta">' + m.semana + ' &middot; ' + new Date(m.fecha).toLocaleString('es-MX') + '</div>';
+      msgHTML += '</div>';
+    });
+  }
+
+  var html = '<div class="panel-inner"><div class="buzon-box">';
+  html += '<div class="buzon-header"><div class="buzon-header-title">Buzon de Comentarios del Director</div></div>';
+  html += '<div class="buzon-tabs">';
+  html += '<button class="buzon-tab' + (isDirector ? ' active' : '') + '" onclick="setBuzonTab(\'director\')">Vista Director</button>';
+  html += '<button class="buzon-tab' + (!isDirector ? ' active' : '') + '" onclick="setBuzonTab(\'recibidos\')">Recibidos (' + buzonMensajes.length + ')</button>';
+  html += '</div>';
+  html += '<div class="buzon-content">';
+  if (isDirector) {
+    html += areaHTML;
+    html += '<button class="buzon-send-btn" onclick="enviarComentarioDirector()">Enviar a G. Administrativa</button>';
+    html += '<div class="buzon-save-note">Tip: da clic en Guardar despues de enviar para preservar los comentarios en el JSON.</div>';
+  } else {
+    html += msgHTML;
+  }
+  html += '</div></div></div>';
+  el.innerHTML = html;
+}
+
+// Init
+['contabilidad','facturacion','tesoreria','gerencia','rrhh','cxc','compras'].forEach(a => {
+  document.getElementById('panel-' + a).innerHTML = renderAreaPanel(a);
+});
+renderPagosDetalle();
+calcGerenciaMetrics();
+renderResumen();
+</script>
+</body>
+</html>
